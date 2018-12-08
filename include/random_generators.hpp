@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_RANDOM_GENERATORS_HPP_
+#define _PWMVS_RANDOM_GENERATORS_HPP_
 
 #include <random>
 
@@ -175,3 +176,5 @@ struct NaiveSampler {
 private:
     int best_probability_idx;
 };
+
+#endif

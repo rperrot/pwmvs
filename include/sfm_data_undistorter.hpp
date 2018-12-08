@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_SFM_DATA_UNDISTORTER_HPP_
+#define _PWMVS_SFM_DATA_UNDISTORTER_HPP_
 
 #include "types.hpp"
 #include "image_io.hpp"
@@ -232,3 +233,5 @@ static void ConvertToPinholeScene(const openMVG::sfm::SfM_Data &in, const std::s
         }
     }
 }
+
+#endif 

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_TYPES_HPP_
+#define _PWMVS_TYPES_HPP_
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -315,3 +316,5 @@ struct RefView : public View {
         return n;
     }
 };
+
+#endif 

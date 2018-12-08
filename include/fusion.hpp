@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_FUSION_HPP_
+#define _PWMVS_FUSION_HPP_
 
 #include "workspace.hpp"
 #include "geometry.hpp"
@@ -74,3 +75,5 @@ public:
 private:
     std::vector<std::shared_ptr<SrcView>> views;
 };
+
+#endif 

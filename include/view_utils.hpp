@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_UTILS_HPP_
+#define _PWMVS_UTILS_HPP_
 
 #include "types.hpp"
 #include "workspace.hpp"
@@ -90,3 +91,5 @@ static bool debugToFiles(const Workspace &workspace, int view_id, bool depths, b
 
     return true;
 }
+
+#endif 

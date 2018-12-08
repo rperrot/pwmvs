@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_PWMVS_CONTROLLER_HPP_
+#define _PWMVS_PWMVS_CONTROLLER_HPP_
 
 #include "types.hpp"
 #include "workspace.hpp"
@@ -19,3 +20,5 @@ public:
     std::shared_ptr<Workspace> workspace;
     typename T::Options pwmvs_options;
 };
+
+#endif 

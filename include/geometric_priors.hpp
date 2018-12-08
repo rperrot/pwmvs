@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_GEOMETRIC_PRIORS_HPP_
+#define _PWMVS_GEOMETRIC_PRIORS_HPP_
 
 #include "types.hpp"
 #include "geometry.hpp"
@@ -188,3 +189,5 @@ public:
 
     const FloatT no_change_prob, change_prob;
 };
+
+#endif

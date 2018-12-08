@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_GEOMETRY_HPP_
+#define _PWMVS_GEOMETRY_HPP_
 
 #include "types.hpp"
 
@@ -76,3 +77,5 @@ static Vector3 PerpendicularTo(const Vector3 &a) {
 static Vector3 PerpendicularTo(const Vector3 &a, const Vector3 &b) {
     return a.cross(b);
 }
+
+#endif

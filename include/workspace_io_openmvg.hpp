@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_WORKSPACE_IO_OPENMVG_HPP_
+#define _PWMVS_WORKSPACE_IO_OPENMVG_HPP_
 
 #include "types.hpp"
 #include "workspace.hpp"
@@ -82,3 +83,5 @@ static void InitializeWorkspaceOpenMVG(const std::string &sfm_data_path, const s
     ConvertToPinholeScene(sfm_data_in, root_path, sfm_data, level, true);
     InitializeWorkspace(sfm_data, workspace);
 }
+
+#endif 

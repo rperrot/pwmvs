@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_PHOTOMETRIC_CONSISTENCY_HPP_
+#define _PWMVS_PHOTOMETRIC_CONSISTENCY_HPP_
 
 #include "types.hpp"
 
@@ -362,3 +363,5 @@ private:
 
     openMVG::image::Sampler2d<Sampler> sampler;
 };
+
+#endif 

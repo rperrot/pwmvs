@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_PROGRESS_HPP_
+#define _PWMVS_PROGRESS_HPP_
 
 #include "types.hpp"
 
@@ -40,3 +41,5 @@ public:
     virtual void increment(int steps = 1);
     virtual void configure(int total_steps);
 };
+
+#endif 

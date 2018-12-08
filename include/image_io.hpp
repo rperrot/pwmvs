@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_IMAGE_IO_HPP_
+#define _PWMVS_IMAGE_IO_HPP_
 
 #include <vector>
 #include <iterator>
@@ -453,3 +454,5 @@ static void ExportPoints(const std::vector<Vector3> &X, const std::vector<Normal
 }
 
 
+
+#endif 

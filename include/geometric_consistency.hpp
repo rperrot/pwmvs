@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_GEOMETRIC_CONSISTENCY_HPP_
+#define _PWMVS_GEOMETRIC_CONSISTENCY_HPP_
 
 #include "types.hpp"
 
@@ -34,3 +35,5 @@ struct GeometricConsistency
     const RefView &ref;
     const FloatT max_error;
 };
+
+#endif 

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_WORKSPACE_IO_ETH3D_HPP_
+#define _PWMVS_WORKSPACE_IO_ETH3D_HPP_
 
 #include "workspace.hpp"
 
@@ -173,3 +174,5 @@ static bool InitializeWorkspaceEth3D(const std::string &folder, Workspace &works
     return true;
 }
 
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_WORKSPACE_HPP_
+#define _PWMVS_WORKSPACE_HPP_
 
 #include "types.hpp"
 
@@ -47,3 +48,5 @@ struct Workspace
     std::string root_path;
     std::string work_path;
 };
+
+#endif 

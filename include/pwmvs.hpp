@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PWMVS_PWMVS_HPP_
+#define _PWMVS_PWMVS_HPP_
 
 #include "types.hpp"
 #include "random_generators.hpp"
@@ -224,3 +225,5 @@ private:
 
     std::map<int, int> hypothesis_count;
 };
+
+#endif 
