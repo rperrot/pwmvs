@@ -12,6 +12,7 @@ if (OPENMP_FOUND)
 endif()
 
 add_library(pwmvs
+    src/command_line.cpp
     src/fusion.cpp
     src/pwmvs.cpp
     src/pwmvs_controller.cpp
