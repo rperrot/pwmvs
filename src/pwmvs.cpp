@@ -7,6 +7,8 @@
 #include "openMVG/image/image_converter.hpp"
 #include "openMVG/image/image_io.hpp"
 
+#define DEBUG_COMPUTATIONS 1
+
 void DebugMinMaxDepth( const std::shared_ptr<RefView>& ref )
 {
   std::cout << "ref.depth.min: " << ref->depth.minCoeff() << " max: " << ref->depth.maxCoeff() << std::endl;
@@ -20,14 +22,18 @@ PWMVS::PWMVS( std::shared_ptr<RefView>& ref, const std::vector<std::shared_ptr<S
   ref->depth.resize( ref->width, ref->height );
   ref->normal.resize( ref->width, ref->height, true, Normal( 0, 0, 0 ) );
 
-  //DebugDepth(ref, std::string("depth_initial") + std::string(".jpeg"));
-  //DebugNormal(ref, std::string("normal_initial") + std::string(".jpeg"));
+#ifdef DEBUG_COMPUTATIONS
+  DebugDepth( ref.get(), std::string( "depth_initial" ) + std::string( ".jpeg" ) );
+  DebugNormal( ref.get(), std::string( "normal_initial" ) + std::string( ".jpeg" ) );
+#endif
 
   initializeRefView();
   createMatrices();
 
-  //DebugDepth(ref, std::string("depth_random") + std::string(".jpeg"));
-  //DebugNormal(ref, std::string("normal_random") + std::string(".jpeg"));
+#ifdef DEBUG_COMPUTATIONS
+  DebugDepth( ref.get(), std::string( "depth_random" ) + std::string( ".jpeg" ) );
+  DebugNormal( ref.get(), std::string( "normal_random" ) + std::string( ".jpeg" ) );
+#endif
 }
 
 bool PWMVS::run()
@@ -54,10 +60,11 @@ bool PWMVS::run()
 
       sweep( perturbation, state_transition_probability, *directions[ dir ] );
 
-      // DEBUG
-      //DebugDepth(ref, std::string("depth_") + std::to_string(iter) + std::string("_") + std::to_string(dir) + std::string(".jpeg"), options.min_depth, options.max_depth);
-      //DebugNormal(ref, std::string("normal_") + std::to_string(iter) + std::string("_") + std::to_string(dir) + std::string(".jpeg"));
-      //DebugNormalIncident(ref, std::string("incident_") + std::to_string(iter) + std::string("_") + std::to_string(dir) + std::string(".jpeg"));
+#ifdef DEBUG_COMPUTATIONS
+      DebugDepth( ref.get(), std::string( "depth_" ) + std::to_string( iter ) + std::string( "_" ) + std::to_string( dir ) + std::string( ".jpeg" ), options.min_depth, options.max_depth );
+      DebugNormal( ref.get(), std::string( "normal_" ) + std::to_string( iter ) + std::string( "_" ) + std::to_string( dir ) + std::string( ".jpeg" ) );
+      DebugNormalIncident( ref.get(), std::string( "incident_" ) + std::to_string( iter ) + std::string( "_" ) + std::to_string( dir ) + std::string( ".jpeg" ) );
+#endif
 
       prev_selection_probabilities.swap( selection_probabilities );
     }
@@ -65,9 +72,11 @@ bool PWMVS::run()
 
   filter();
 
-  // DEBUG
-  //DebugDepth(ref, std::string("depth_filtered") + std::string(".jpeg"), options.min_depth, options.max_depth);
-  //DebugNormal(ref, std::string("normal_filtered") + std::string(".jpeg"));
+// DEBUG
+#ifdef DEBUG_COMPUTATIONS
+  DebugDepth( ref.get(), std::string( "depth_filtered" ) + std::string( ".jpeg" ), options.min_depth, options.max_depth );
+  DebugNormal( ref.get(), std::string( "normal_filtered" ) + std::string( ".jpeg" ) );
+#endif
 
   for ( auto iter : hypothesis_count )
   {
@@ -273,8 +282,10 @@ void PWMVS::computeInitialColorSimilarities()
       }
     }
 
-    // DEBUG COLOR SIMILARITIES
-    //DebugImage(color_similarities[src_id], std::string("color_similarities_") + std::to_string(src_id) + std::string(".jpeg"));
+// DEBUG COLOR SIMILARITIES
+#ifdef DEBUG_COMPUTATIONS
+    DebugImage( color_similarities[ src_id ], std::string( "color_similarities_" ) + std::to_string( src_id ) + std::string( ".jpeg" ) );
+#endif
     //std::cout << "initial min/max:" << color_similarities[src_id].minCoeff() << " " << color_similarities[src_id].maxCoeff() << std::endl;
   }
 }
