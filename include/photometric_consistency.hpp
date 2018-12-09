@@ -1,7 +1,10 @@
 #ifndef _PWMVS_PHOTOMETRIC_CONSISTENCY_HPP_
 #define _PWMVS_PHOTOMETRIC_CONSISTENCY_HPP_
 
+#include <Eigen/StdVector>
+
 #include "geometry.hpp"
+#include "photometric_consistency_cache.hpp"
 #include "types.hpp"
 
 #include <openMVG/image/sample.hpp>
@@ -215,7 +218,7 @@ struct PhotometricConsistencyOptimized
   PhotometricConsistencyOptimized( PhotometricConsistencyOptimized<Sampler>&& src )      = default;
 
   PhotometricConsistencyOptimized<Sampler>& operator=( const PhotometricConsistencyOptimized<Sampler>& src ) = default;
-  PhotometricConsistencyOptimized<Sampler>& operator=( PhotometricConsistencyOptimized<Sampler>& src ) = default;
+  PhotometricConsistencyOptimized<Sampler>& operator=( PhotometricConsistencyOptimized<Sampler>&& src ) = default;
 
 public:
   FloatT operator()( const SrcView& src, const Vector2i& x )
@@ -223,6 +226,73 @@ public:
     return ( *this )( src, x, ref.normal( x ), ref.depth( x ) );
   }
 
+  // Version with cache
+  FloatT operator()( const SrcView& src, const Vector2i& x, const Normal& normal, const FloatT depth, const PhotometricConistencyCache& cache ) const
+  {
+    const Vector3 X = ref.unproject( convertToFloat( x ), depth );
+
+    if ( !src.isVisible( src.project( X ) ) )
+      return -1;
+
+    const FloatT center_color = Sample( ref.image, x );
+
+    FloatT weights_sum                = 0;
+    FloatT weighted_src_color_sum     = 0;
+    FloatT weighted_src_ref_color_sum = 0;
+    FloatT weighted_src_color_sum_sq  = 0;
+
+    const FloatT weighted_ref_color_sum    = ref_weighted_color_sum( x );
+    const FloatT weighted_ref_color_sum_sq = ref_weighted_color_sum_sq( x );
+
+    const FloatT d = X.dot( normal );
+
+    size_t cur_index = 0;
+    for ( int window_row = -window_size; window_row <= window_size; window_row++ )
+    {
+      for ( int window_col = -window_size; window_col <= window_size; window_col++ )
+      {
+        assert( cur_index < cache._cache_ray.size() );
+        const Normal  ray   = cache._cache_ray[ cur_index ]; // ref.ray( convertToFloat( ( x + x_ ).eval() ) );
+        const Vector2 x_src = src.project( ( d / ray.dot( normal ) ) * ray );
+
+        // TODO: since this function is called lot's of times, it may be interesting to cache reference image values
+        const FloatT ref_color = cache._cache_ref_color[ cur_index ]; // Sample( ref.image, ( x + x_ ).eval() );
+        const FloatT src_color = Sample( src.image, x_src, false );
+
+        const FloatT w = weight( window_row, window_col, center_color - ref_color );
+
+        const FloatT wSrcColor = w * src_color;
+
+        weighted_src_color_sum += wSrcColor;
+        weighted_src_color_sum_sq += wSrcColor * src_color;
+        weighted_src_ref_color_sum += wSrcColor * ref_color;
+        weights_sum += w;
+
+        ++cur_index;
+      }
+    }
+
+    const FloatT inv_sum = 1 / weights_sum;
+
+    weighted_src_color_sum *= inv_sum;
+    weighted_src_color_sum_sq *= inv_sum;
+    weighted_src_ref_color_sum *= inv_sum;
+
+    const FloatT ref_color_var       = weighted_ref_color_sum_sq - ( weighted_ref_color_sum * weighted_ref_color_sum );
+    const FloatT src_color_var       = weighted_src_color_sum_sq - ( weighted_src_color_sum * weighted_src_color_sum );
+    const FloatT ref_src_color_covar = weighted_src_ref_color_sum - ( weighted_ref_color_sum * weighted_src_color_sum );
+
+    if ( ref_color_var < 1e-6 )
+      return -1;
+    if ( src_color_var < 1e-6 )
+      return -1;
+
+    FloatT ncc = ref_src_color_covar / std::sqrt( ref_color_var * src_color_var );
+    ncc        = std::max( static_cast<FloatT>( -1 ), std::min( static_cast<FloatT>( +1 ), ncc ) );
+    return ncc;
+  }
+
+  // Version without cache
   FloatT operator()( const SrcView& src, const Vector2i& x, const Normal& normal, const FloatT depth ) const
   {
     const Vector3 X = ref.unproject( convertToFloat( x ), depth );
@@ -285,6 +355,35 @@ public:
     return ncc;
   }
 
+  /**
+    * @brief Compute and store in cache values for a given pixel in reference image 
+    * 
+    * @param x 
+    */
+  void computeCache( const Vector2i& x, PhotometricConistencyCache& cache ) const
+  {
+    const size_t cache_size = ( 2 * window_size + 1 ) * ( 2 * window_size + 1 );
+    if ( cache_size > cache._cache_ref_color.size() )
+    {
+      cache._cache_ref_color.resize( cache_size );
+      cache._cache_ray.resize( cache_size );
+    }
+
+    size_t index = 0;
+    for ( int window_row = -window_size; window_row <= window_size; window_row++ )
+    {
+      for ( int window_col = -window_size; window_col <= window_size; window_col++ )
+      {
+        const Vector2i x_( window_col, window_row );
+        assert( index < cache_size );
+
+        cache._cache_ray[ index ]       = ref.ray( convertToFloat( ( x + x_ ).eval() ) );
+        cache._cache_ref_color[ index ] = Sample( ref.image, ( x + x_ ).eval() );
+        ++index;
+      }
+    }
+  }
+
 private:
   void precalculate()
   {
@@ -296,7 +395,8 @@ private:
       {
         const int id_y  = window_row + window_size;
         const int id_x  = window_col + window_size;
-        const int index = window_col + ( 2 * window_size + 1 ) * window_row;
+        const int index = id_x + ( 2 * window_size + 1 ) * id_y;
+        assert( index < _precomputed_spatial_weight.size() );
 
         _precomputed_spatial_weight[ index ] = std::exp( -( window_row * window_row + window_col * window_col ) * spatial_dispersion );
       }
@@ -304,7 +404,9 @@ private:
     _precomputed_color_weight.resize( 512 );
     for ( int color_diff = -255; color_diff <= 255; ++color_diff )
     {
-      const FloatT floatDiff                        = 1.f / 255.f;
+      const FloatT floatDiff = 1.f / 255.f;
+      const size_t cur_index = 255 + color_diff;
+      assert( cur_index < _precomputed_color_weight.size() );
       _precomputed_color_weight[ 255 + color_diff ] = std::exp( -( floatDiff * floatDiff ) * color_dispersion );
     }
 
@@ -337,10 +439,9 @@ private:
         ref_weighted_color_sum_sq( row, col ) = weighted_color_sum_sq / weights_sum;
       }
     }
-
   }
 
-  FloatT weight( int row_diff, int col_diff, const FloatT color_diff )
+  FloatT weight( int row_diff, int col_diff, const FloatT color_diff ) const
   {
     // uses precomputed weigth
     // exp( a + b ) = exp( a ) * exp( b )
@@ -354,7 +455,7 @@ private:
 
     const float spatial_weight = _precomputed_spatial_weight[ index ];
 
-    const int   i_color_diff = std::max( std::min( (int)( color_diff * 255 ) + 255, 0 ), 510 );
+    const int   i_color_diff = std::min( std::max( (int)( color_diff * 255 ) + 255, 0 ), 510 );
     const float color_weight = _precomputed_color_weight[ i_color_diff ];
 
     return spatial_weight * color_weight;
@@ -371,6 +472,10 @@ private:
       return Sample( image, x_ );
     }
 
+    /*
+    const int pix_x = std::min( image.Width() - 1, std::max( 0, convertToInt( x( 0 ) ) ) );
+    const int pix_y = std::min( image.Height() - 1, std::max( 0, convertToInt( x( 1 ) ) ) );
+    */
     return sampler( image, convertToOpenMVG( x.y() ), convertToOpenMVG( x.x() ) );
   }
 
@@ -379,7 +484,6 @@ private:
     return image( x );
   }
 
-private:
 private:
   int    window_size;
   FloatT color_dispersion;
@@ -390,8 +494,8 @@ private:
   Image<FloatT> ref_weighted_color_sum;
   Image<FloatT> ref_weighted_color_sum_sq;
 
-  std::vector<FloatT> _precomputed_spatial_weight;
-  std::vector<FloatT> _precomputed_color_weight;
+  std::vector<FloatT, Eigen::aligned_allocator<FloatT>> _precomputed_spatial_weight;
+  std::vector<FloatT, Eigen::aligned_allocator<FloatT>> _precomputed_color_weight;
 
   openMVG::image::Sampler2d<Sampler> sampler;
 };
